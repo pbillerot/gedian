@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Gedian
+Comment=Edition des fichiers de configuration d'un système Debian
+Exec=python3 {path_gedian}/gedian.py
+Icon={path_gedian}/gedian.svg
+Terminal=false
+Type=Application
+Categories=Utility
