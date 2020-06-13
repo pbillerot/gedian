@@ -342,7 +342,7 @@ class Gedian(Gtk.Window):
     def on_keyboard_accel_pressed(self, *args):
         """ Ctrl+key """
         if args[2] == 101 : # ctrl+E
-            self.exec_current_line()
+            self.paste_current_line
         if args[2] == 115 : # ctrl+S
             if self.is_modified : self.button_save.clicked()
 
