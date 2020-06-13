@@ -12,6 +12,13 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "gedian",
+            "type": "python",
+            "request": "launch",
+            "program": "gedian.py",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "gedian -install",
             "type": "python",
             "request": "launch",

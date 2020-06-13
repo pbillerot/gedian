@@ -2,13 +2,11 @@
 # -*- coding:Utf-8 -*-
 """
     Editeur des fichiers du système Debian
-    TODO dialog about https://github.com/pbillerot/gedian
 """
 import os
 import argparse
 import json
 import subprocess, shlex
-
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GtkSource', '3.0')
@@ -34,7 +32,7 @@ class Gedian(Gtk.Window):
             self.gedian_directory = os.path.expanduser(gedian_directory)
         if not os.path.exists(self.gedian_directory):
             os.makedirs(self.gedian_directory)
-        os.chdir(self.gedian_directory)
+        # os.chdir(self.gedian_directory)
         self.gedian_file = self.gedian_directory + "/" + Gedian.GEDIAN_NAME
         self.current_file = ""
 
@@ -75,65 +73,97 @@ class Gedian(Gtk.Window):
         self.set_titlebar(hb)
 
         # PANE
-        # paned box_left box_right
-        paned = Gtk.Paned.new(Gtk.Orientation.HORIZONTAL)
+        # PANE_LEFT PANE_RIGHT
+        pane = Gtk.Paned.new(Gtk.Orientation.HORIZONTAL)
+        self.add(pane)
 
-        box_left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box_left.set_border_width(6)
-        paned.add1(box_left)
+        pane_left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        pane_left.set_border_width(3)
+        pane.add1(pane_left)
 
-        box_right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box_right.set_border_width(6)
-        paned.add2(box_right)
+        pane_right = Gtk.Paned.new(Gtk.Orientation.VERTICAL)
+        pane.add2(pane_right)
 
-        self.add(paned)
-
-        # LEFT
-        # box_left button_list listbox
+        # PANE_LEFT
+        # BUTTON_LIST LISTBOX
         button_list = Gtk.Button.new_with_label(Gedian.GEDIAN_NAME)
         button_list.connect("clicked", self.on_button_list_clicked)
-        box_left.pack_start(button_list, False, False, 3)
+        pane_left.pack_start(button_list, False, False, 3)
 
         self.listbox = self.create_listbox()
-        box_left.pack_start(self.listbox, True, True, 3)
+        pane_left.pack_start(self.listbox, True, True, 3)
 
-        # RIGHT
-        # box_right toolbar_edit paned_editor: textview terminal
+        # PANE_RIGHT
+        # PANE_TOP PANE_BOTTOM
+        frame_editor = Gtk.Frame()
+        frame_editor.set_border_width(3)
+        pane_right.add1(frame_editor)
+        vbox_top = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        frame_editor.add(vbox_top)
+
+        frame_terminal = Gtk.Frame()
+        frame_terminal.set_border_width(3)
+        pane_right.add2(frame_terminal)
+        pane_right.set_position(300)
+        vbox_bottom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        frame_terminal.add(vbox_bottom)
+
+        # PANE_TOP
+        # TOOLBAR_EDIT EDITOR
+        
+        # TOOLBAR_EDIT
         self.toolbar_edit = Gtk.HBox()
-        box_right.pack_start(self.toolbar_edit, False, True, 3)
+        vbox_top.pack_start(self.toolbar_edit, False, True, 3)
         
         self.label_file = Gtk.Label()       
-        self.toolbar_edit.pack_start(self.label_file, True, True, 0)
+        self.toolbar_edit.pack_start(self.label_file, True, True, 3)
 
         self.check_crlf = Gtk.CheckButton.new_with_label("Retour à la ligne")
         self.check_crlf.connect("toggled", self.on_check_crlf_toggled)
         self.check_crlf.set_sensitive(False)
-        self.toolbar_edit.pack_start(self.check_crlf, False, True, 6)
-
-        self.button_exec = Gtk.Button()
-        image = Gtk.Image.new_from_icon_name("application-x-executable-symbolic", Gtk.IconSize.BUTTON)
-        self.button_exec.add(image)
-        self.button_exec.set_sensitive(False)
-        self.button_exec.connect("clicked", self.on_button_exec_clicked)
-        self.toolbar_edit.pack_start(self.button_exec, False, False, 0)
+        self.toolbar_edit.pack_start(self.check_crlf, False, True, 3)
 
         self.button_save = Gtk.Button.new_with_label("Enregistrer")
         self.button_save.set_sensitive(False)
         self.button_save.connect("clicked", self.on_button_save_clicked)
-        self.toolbar_edit.pack_end(self.button_save, False, False, 0)
+        self.toolbar_edit.pack_end(self.button_save, False, False, 3)
 
-        paned_editor = Gtk.Paned.new(Gtk.Orientation.VERTICAL)
-
+        # EDITOR voir create_editor()
         self.scrolledwindow = Gtk.ScrolledWindow()
-        paned_editor.pack1(self.scrolledwindow, True, True)
+        vbox_top.pack_end(self.scrolledwindow, True, True, 0)
+
+        # PANE_BOTTOM
+        # TOOLBAR_TERMINAL TERMINAL
+
+        # TOOLBAR_TERMINAL
+        self.toolbar_terminal = Gtk.HBox()
+        vbox_bottom.pack_start(self.toolbar_terminal, False, True, 3)
+
+        self.button_paste = Gtk.Button()
+        image = Gtk.Image.new_from_icon_name("go-down-symbolic", Gtk.IconSize.BUTTON)
+        self.button_paste.add(image)
+        self.button_paste.set_tooltip_text("Coller la ligne de l'éditeur dans le terminal")
+        self.button_paste.connect("clicked", self.on_button_paste_clicked)
+        self.toolbar_terminal.pack_start(self.button_paste, False, False, 0)
+
+        self.button_exec = Gtk.Button()
+        image = Gtk.Image.new_from_icon_name("media-playback-start-symbolic", Gtk.IconSize.BUTTON)
+        self.button_exec.add(image)
+        self.button_exec.set_tooltip_text("Valider la ligne de commande du terminal")
+        self.button_exec.connect("clicked", self.on_button_exec_clicked)
+        self.toolbar_terminal.pack_start(self.button_exec, False, False, 0)
+
+        self.button_clear = Gtk.Button()
+        image = Gtk.Image.new_from_icon_name("edit-clear-all-symbolic", Gtk.IconSize.BUTTON)
+        self.button_clear.add(image)
+        self.button_clear.set_tooltip_text("Nettoyer la fenêtre du terminal")
+        self.button_clear.connect("clicked", self.on_button_clear_clicked)
+        self.toolbar_terminal.pack_start(self.button_clear, False, False, 0)
 
         # TERMINAL
         # https://lazka.github.io/pgi-docs/Vte-2.91/classes/Terminal.html
         self.terminal = self.create_terminal()
-        paned_editor.pack2(self.terminal, False, True)
-        paned_editor.set_position(500)
-
-        box_right.pack_end(paned_editor, True, True, 3)
+        vbox_bottom.pack_start(self.terminal, True, True, 0)
 
     # GESTION LISTBOX
     def create_listbox(self):
@@ -198,10 +228,10 @@ class Gedian(Gtk.Window):
             dialog = Gtk.MessageDialog(parent=self,
                 modal=True, destroy_with_parent=True,
                 message_type=Gtk.MessageType.WARNING,
-                buttons=Gtk.ButtonsType.OK_CANCEL,
+                buttons=Gtk.ButtonsType.YES_NO,
                 text="Le fichier courant n'a pas été enregistré")
             dialog.format_secondary_text(
-                "Confirmer par [Valider] pour abandonner les modifications"
+                "Confirmer par [Oui] pour abandonner les modifications"
                 )
             response = dialog.run()
             if response == Gtk.ResponseType.CANCEL:
@@ -254,7 +284,7 @@ class Gedian(Gtk.Window):
         # passage ligne suivante
         iter.forward_lines(1)
         self.source_buffer.place_cursor(iter)
-        return sline
+        return sline.replace("\n", "")
 
     def on_textbuffer_changed(self, widget):
         """ Le texte a été modifié """
@@ -262,8 +292,8 @@ class Gedian(Gtk.Window):
         self.button_save.set_sensitive(True)
         self.label_file.set_markup("<b>"+ self.current_file + " *" + "</b>")
 
-    def exec_current_line(self):
-        """ exécution de la ligne courante """
+    def paste_current_line(self):
+        """ on colle la ligne courante dans le terminal """
         # Sélection de la ligne courante, copie dans le clipboard et coller dans le terminal
         sline = self.get_editor_current_line()
         self.clipboard.set_text(sline, -1)
@@ -303,7 +333,7 @@ class Gedian(Gtk.Window):
         if event.type == Gdk.EventType.KEY_PRESS:
             if event.state & shift_key and event.state & control_key: #both shift  and control
                 if event.keyval == 67: # that's the C key
-                    self.terminal.copy_clipboard()
+                    self.terminal.copy_clipboard_format(Vte.Format.TEXT)
                 elif event.keyval == 86: # and that's the V key
                     self.terminal.paste_clipboard()
                 return True
@@ -328,9 +358,20 @@ class Gedian(Gtk.Window):
         """ Sauvegarde du fichier """
         self.save_file_current()
     
+    def on_button_paste_clicked(self, widget):
+        """ On colle la ligne courante de l'éditeur dans le terminal"""
+        self.paste_current_line()
+
     def on_button_exec_clicked(self, widget):
         """ Exécution de la ligne courante """
-        self.exec_current_line()
+        # Collage du \n copie dans le clipboard
+        self.clipboard.set_text("\n", -1)
+        self.terminal.paste_clipboard()
+
+    def on_button_clear_clicked(self, widget):
+        """ Noeetoyage du terminal """
+        self.clipboard.set_text("clear\n", -1)
+        self.terminal.paste_clipboard()
     
     def on_check_crlf_toggled(self, button):
         """ gestion retour à la ligne """
@@ -399,16 +440,22 @@ class Gedian(Gtk.Window):
         about.set_transient_for(self)
         about.set_title(APPLICATION_NAME)
         about.set_program_name(APPLICATION_NAME)
-        about.set_version("20.6.12")
+        about.set_version("20.6.13")
         about.set_copyright("pbillerot@github.com")
         about.set_comments("Editeur des fichiers d'un système DEBIAN")
         about.set_website("https://github.com/pbillerot/gedian")
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file(get_resource_path("gedian.svg"))
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(get_resource_path("./gedian.svg"))
         about.set_logo(pixbuf)
         with open(get_resource_path("LICENSE"), 'r') as file:
             about.set_license(file.read())
         about.connect("response", lambda d, r: d.destroy())
         about.show()
+
+    def get_resource_path(self, rel_path):
+        dir_of_py_file = os.path.dirname(__file__)
+        rel_path_to_resource = os.path.join(dir_of_py_file, rel_path)
+        abs_path_to_resource = os.path.abspath(rel_path_to_resource)
+        return os.path.expanduser(abs_path_to_resource)
 
 def get_resource_path(rel_path):
     dir_of_py_file = os.path.dirname(__file__)
@@ -444,3 +491,24 @@ else:
     win.connect("destroy", Gtk.main_quit)
     win.show_all()
     Gtk.main()
+
+""" LAYOUT
+headbar
+pane_left  pane_right
+
+pane_left
+button gedian.list
+listbox gedian.list
+
+pane_right
+pane_top  pane_bottom
+
+pane_top
+toolbar_edit
+editor
+
+pane_bottom
+toolbar_terminal
+terminal
+
+"""
