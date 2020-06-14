@@ -21,4 +21,58 @@ optional arguments:
 
 - python3 [repertoire installation]/gedian.py
 
-![](gedian_capture.png)
+![](./assets/gedian_capture.png)
+
+## UTILISATION
+
+L'interface de GEDIAN propose 3 blocs :
+
+- la liste des fichiers que vous voulez gérer (gedian.list)
+- l'éditeur de fichier texte
+- le terminal émulateur du shell
+
+## La liste des fichiers
+
+La liste des fichiers est maintenue dans le fichier ```~/.local/share/gedian/debian.list``` 
+
+Cette liste est modifiable via le bouton [debian.list]
+
+![](./assets/gedian_list.png)
+
+## L'éditeur de fichier texte
+
+L'éditeur est un dérivé de l'éditeur GTKSourceView de Gnome avec le coloriage syntaxique des fichiers (_si le type de fichier est identifiable_)
+
+Le bouton [Enregistrer] ou (Ctrl+S) va dérouler les opérations suivantes :
+- backup du fichier (en.bak) avant les modifications
+- enregistrement du fichier modifié dans le répertoire de GEDIAN (_en conservant l'arborescence des répertoires_)
+- et enfin, enregistrement du fichier à son endroit
+
+Nous retrouverons sous GEDIAN l'ensemble des fichiers modifiés avec leur backup :
+```
+/home/billerot/.local/share/gedian
+├── etc
+│   ├── exports
+│   ├── exports.bak
+│   └── samba
+│       ├── smb.conf
+│       └── smb.conf.bak
+├── gedian.list
+├── gedian.list.bak
+├── mes_commandes.md
+└── mes_commandes.md.bak
+```
+
+## Le terminal
+
+Le terminal est un dérivé du VTE Terminal de Gnome
+
+![](./assets/gedian_terminal.png)
+
+Fonctions des 3 boutons de la barre d'outils :
+
+[v] permet de recopier la ligne de courante de l'éditeur dans le terminal (_le curseur de l'éditeur va se déplacer sur la ligne suivante, ce qui permettra d'enchaîner les commandes dans le terminal_)
+
+[>] va générer une validation de la commande dans le terminal
+
+[x] va nettoyer la fenêtre du terminal (_commande clear_)

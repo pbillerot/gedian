@@ -221,7 +221,6 @@ class Gedian(Gtk.Window):
                 self.listbox.select_row(self.listbox.get_row_at_index(irow))
             irow += 1
 
-
     def confirm_if_modified(self):
         bret = True
         if self.is_modified :
@@ -234,7 +233,7 @@ class Gedian(Gtk.Window):
                 "Confirmer par [Oui] pour abandonner les modifications"
                 )
             response = dialog.run()
-            if response == Gtk.ResponseType.CANCEL:
+            if response == Gtk.ResponseType.NO:
                 bret = False
             dialog.destroy()
         return bret
@@ -401,7 +400,7 @@ class Gedian(Gtk.Window):
 
         pathfile = self.current_file
         # BACKUP du fichier.bak dans le répertoire gedian
-        if self.current_file.find("local/share/debian") == -1:
+        if self.current_file.find("local/share/gedian") == -1:
             # création de la même arborescence sous gedian
             pathfile = os.path.abspath(".") + self.current_file
             directory = os.path.dirname(pathfile)
@@ -411,12 +410,13 @@ class Gedian(Gtk.Window):
         subprocess.Popen(shlex.split(cmd))
 
         # RECOPIE du fichier modifié dans gedian
-        if self.current_file.find("local/share/debian") == -1:
+        if self.current_file.find("local/share/gedian") == -1:
             with open(pathfile, "w") as f:           
                 f.write(data) 
 
         # CTRL DROIT d'écriture
-        if os.access(self.current_file, os.W_OK):
+        dir_file = os.path.dirname(self.current_file)
+        if os.access(dir_file, os.W_OK):
             # ENREGISTREMENT
             with open(self.current_file, "w") as f:           
                 f.write(data) 
