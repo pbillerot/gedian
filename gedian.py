@@ -440,7 +440,7 @@ class Gedian(Gtk.Window):
         about.set_transient_for(self)
         about.set_title(APPLICATION_NAME)
         about.set_program_name(APPLICATION_NAME)
-        about.set_version("20.6.13")
+        about.set_version("20.6.14")
         about.set_copyright("pbillerot@github.com")
         about.set_comments("Editeur des fichiers d'un système DEBIAN")
         about.set_website("https://github.com/pbillerot/gedian")
@@ -491,24 +491,3 @@ else:
     win.connect("destroy", Gtk.main_quit)
     win.show_all()
     Gtk.main()
-
-""" LAYOUT
-headbar
-pane_left  pane_right
-
-pane_left
-button gedian.list
-listbox gedian.list
-
-pane_right
-pane_top  pane_bottom
-
-pane_top
-toolbar_edit
-editor
-
-pane_bottom
-toolbar_terminal
-terminal
-
-"""
