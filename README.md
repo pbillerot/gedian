@@ -41,7 +41,7 @@ Cette liste est modifiable via le bouton [debian.list]
 
 ## L'éditeur de fichier texte
 
-L'éditeur est un dérivé de l'éditeur GTKSourceView de Gnome avec le coloriage syntaxique des fichiers (_si le type de fichier est identifiable_)
+L'éditeur est un dérivé de l'éditeur GTKSourceView de Gnome avec le coloriage syntaxique (_si le type de fichier est identifiable_)
 
 Le bouton [Enregistrer] ou (Ctrl+S) va dérouler les opérations suivantes :
 - backup du fichier (en.bak) avant les modifications
