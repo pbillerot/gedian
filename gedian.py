@@ -2,6 +2,7 @@
 # -*- coding:Utf-8 -*-
 """
     Editeur des fichiers du système Debian
+    TODO Notebook
 """
 import os
 import argparse
@@ -60,8 +61,7 @@ class Gedian(Gtk.Window):
         button_menu.add(image)
         self.popover = Gtk.Popover()
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        help = Gtk.Label()
-        help.set_markup('<a href="https://github.com/pbillerot/gedian">Aide</a>')
+        help = Gtk.LinkButton.new_with_label("https://github.com/pbillerot/gedian", "Aide")
         vbox.pack_start(help, False, True, 10)
         button_about = Gtk.Button()
         button_about.set_label("A propos...")
@@ -95,11 +95,9 @@ class Gedian(Gtk.Window):
 
         # PANE_RIGHT
         # PANE_TOP PANE_BOTTOM
-        frame_editor = Gtk.Frame()
-        frame_editor.set_border_width(3)
-        pane_right.add1(frame_editor)
-        vbox_top = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        frame_editor.add(vbox_top)
+        self.notebook = Gtk.Notebook()
+        self.notebook.set_border_width(3)
+        pane_right.add1(self.notebook)
 
         frame_terminal = Gtk.Frame()
         frame_terminal.set_border_width(3)
@@ -109,56 +107,45 @@ class Gedian(Gtk.Window):
         frame_terminal.add(vbox_bottom)
 
         # PANE_TOP
-        # TOOLBAR_EDIT EDITOR
+        # NOTEBOOK
         
-        # TOOLBAR_EDIT
-        self.toolbar_edit = Gtk.HBox()
-        vbox_top.pack_start(self.toolbar_edit, False, True, 3)
-        
-        self.label_file = Gtk.Label()       
-        self.toolbar_edit.pack_start(self.label_file, True, True, 3)
-
-        self.check_crlf = Gtk.CheckButton.new_with_label("Retour à la ligne")
-        self.check_crlf.connect("toggled", self.on_check_crlf_toggled)
-        self.check_crlf.set_sensitive(False)
-        self.toolbar_edit.pack_start(self.check_crlf, False, True, 3)
-
-        self.button_save = Gtk.Button.new_with_label("Enregistrer")
-        self.button_save.set_sensitive(False)
-        self.button_save.connect("clicked", self.on_button_save_clicked)
-        self.toolbar_edit.pack_end(self.button_save, False, False, 3)
-
-        # EDITOR voir create_editor()
-        self.scrolledwindow = Gtk.ScrolledWindow()
-        vbox_top.pack_end(self.scrolledwindow, True, True, 0)
-
         # PANE_BOTTOM
         # TOOLBAR_TERMINAL TERMINAL
 
-        # TOOLBAR_TERMINAL
-        self.toolbar_terminal = Gtk.HBox()
-        vbox_bottom.pack_start(self.toolbar_terminal, False, True, 3)
+        # TOOLBAR_TERMINAL_-EDITOR
+        self.toolbar_terminal_editor = Gtk.HBox()
+        vbox_bottom.pack_start(self.toolbar_terminal_editor, False, True, 3)
 
         self.button_paste = Gtk.Button()
         image = Gtk.Image.new_from_icon_name("go-down-symbolic", Gtk.IconSize.BUTTON)
         self.button_paste.add(image)
         self.button_paste.set_tooltip_text("Coller la ligne de l'éditeur dans le terminal")
         self.button_paste.connect("clicked", self.on_button_paste_clicked)
-        self.toolbar_terminal.pack_start(self.button_paste, False, False, 0)
+        self.toolbar_terminal_editor.pack_start(self.button_paste, False, False, 0)
 
         self.button_exec = Gtk.Button()
         image = Gtk.Image.new_from_icon_name("media-playback-start-symbolic", Gtk.IconSize.BUTTON)
         self.button_exec.add(image)
         self.button_exec.set_tooltip_text("Valider la ligne de commande du terminal")
         self.button_exec.connect("clicked", self.on_button_exec_clicked)
-        self.toolbar_terminal.pack_start(self.button_exec, False, False, 0)
+        self.toolbar_terminal_editor.pack_start(self.button_exec, False, False, 0)
 
         self.button_clear = Gtk.Button()
         image = Gtk.Image.new_from_icon_name("edit-clear-all-symbolic", Gtk.IconSize.BUTTON)
         self.button_clear.add(image)
         self.button_clear.set_tooltip_text("Nettoyer la fenêtre du terminal")
         self.button_clear.connect("clicked", self.on_button_clear_clicked)
-        self.toolbar_terminal.pack_start(self.button_clear, False, False, 0)
+        self.toolbar_terminal_editor.pack_start(self.button_clear, False, False, 0)
+
+        self.button_save = Gtk.Button.new_with_label("Enregistrer")
+        self.button_save.set_sensitive(False)
+        self.button_save.connect("clicked", self.on_button_save_clicked)
+        self.toolbar_terminal_editor.pack_end(self.button_save, False, False, 3)
+
+        self.check_crlf = Gtk.CheckButton.new_with_label("Retour à la ligne")
+        self.check_crlf.connect("toggled", self.on_check_crlf_toggled)
+        self.check_crlf.set_sensitive(False)
+        self.toolbar_terminal_editor.pack_end(self.check_crlf, False, True, 3)
 
         # TERMINAL
         # https://lazka.github.io/pgi-docs/Vte-2.91/classes/Terminal.html
@@ -191,7 +178,7 @@ class Gedian(Gtk.Window):
             pass
 
     def on_button_list_clicked(self, widget):
-        """ Chargement de textview avec la liste des fichiers """
+        """ Chargement de l'éditeur avec gedian.list """
         if self.confirm_if_modified() :
             self.current_file = self.gedian_file
             self.load_file_current()
@@ -244,9 +231,7 @@ class Gedian(Gtk.Window):
     # https://lazka.github.io/pgi-docs/GtkSource-3.0/classes/Buffer.html   
     # http://mcclinews.free.fr/python/pygtktutfr/sec-TextBuffers.html    
     # https://sourceforge.net/p/gtksourceview/wiki/markdown_syntax/  
-    def create_editor(self, content):
-        for children in self.scrolledwindow.get_children():
-            Gtk.Widget.destroy(children)
+    def add_page_notebook(self, content="", title="Sans nom"):
 
         lang_manager = GtkSource.LanguageManager()
         language = lang_manager.guess_language(self.current_file, None)
@@ -269,7 +254,9 @@ class Gedian(Gtk.Window):
             wrap_mode=Gtk.WrapMode.NONE
         )
         # self.source_editor.set_editable(False)
-        self.scrolledwindow.add(self.source_editor)
+        scrolledwindow = Gtk.ScrolledWindow()
+        scrolledwindow.add(self.source_editor)
+        self.notebook.append_page(child=scrolledwindow, tab_label=Gtk.Label(label=title))
         self.show_all()
 
     def get_editor_current_line(self):
@@ -386,9 +373,9 @@ class Gedian(Gtk.Window):
             with open(self.current_file) as f:
                 data = f.read()
 
-        self.create_editor(data)
+        self.add_page_notebook(content=data, title=self.current_file)
 
-        self.label_file.set_markup("<b>"+ self.current_file + "</b>")
+        # self.label_file.set_markup("<b>"+ self.current_file + "</b>")
         self.button_save.set_sensitive(False)
         self.check_crlf.set_sensitive(True)
         self.button_exec.set_sensitive(True)
