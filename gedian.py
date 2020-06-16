@@ -2,7 +2,7 @@
 # -*- coding:Utf-8 -*-
 """
     Editeur des fichiers du système Debian
-    TODO répertoire gedian en paramètre
+    TODO 
 """
 import os
 import argparse
@@ -199,7 +199,7 @@ class Gedian(Gtk.Window):
                 modal=True, destroy_with_parent=True,
                 message_type=Gtk.MessageType.WARNING,
                 buttons=Gtk.ButtonsType.YES_NO,
-                text="Le fichier courant n'a pas été enregistré")
+                text="Le fichier [" + path_file + "] n'a pas été enregistré")
             dialog.format_secondary_text(
                 "Confirmer par [Oui] pour abandonner les modifications"
                 )
@@ -482,7 +482,7 @@ class Gedian(Gtk.Window):
 
         pathfile = self.current_file
         # BACKUP du fichier.bak dans le répertoire gedian
-        if self.current_file.find("local/share/gedian") == -1:
+        if self.current_file.find(self.gedian_directory) == -1:
             # création de la même arborescence sous gedian
             pathfile = os.path.abspath(".") + self.current_file
             directory = os.path.dirname(pathfile)
@@ -492,7 +492,7 @@ class Gedian(Gtk.Window):
         subprocess.Popen(shlex.split(cmd))
 
         # RECOPIE du fichier modifié dans gedian
-        if self.current_file.find("local/share/gedian") == -1:
+        if self.current_file.find(self.gedian_directory) == -1:
             with open(pathfile, "w") as f:           
                 f.write(data) 
 
@@ -520,7 +520,7 @@ class Gedian(Gtk.Window):
         about.set_transient_for(self)
         about.set_title(APPLICATION_NAME)
         about.set_program_name(APPLICATION_NAME)
-        about.set_version("20.6.14")
+        about.set_version("20.6.16")
         about.set_copyright("pbillerot@github.com")
         about.set_comments("Editeur des fichiers d'un système DEBIAN")
         about.set_website("https://github.com/pbillerot/gedian")
@@ -536,6 +536,16 @@ class Gedian(Gtk.Window):
         rel_path_to_resource = os.path.join(dir_of_py_file, rel_path)
         abs_path_to_resource = os.path.abspath(rel_path_to_resource)
         return os.path.expanduser(abs_path_to_resource)
+
+    def on_close(self, event, data):
+        """ Fermeture de l'application """
+        # Recherche fichiers modifiés
+        is_ok= True
+        for file_path in self.notebook_pages:
+            if self.notebook_pages[file_path]["is_modified"]:
+                is_ok = self.confirm_if_modified(file_path)
+        
+        return False if is_ok else True
 
 def get_resource_path(rel_path):
     dir_of_py_file = os.path.dirname(__file__)
@@ -555,6 +565,7 @@ def replace_in_file(file_path_in , file_path_out, dico):
 # Point d'entrée
 parser = argparse.ArgumentParser()
 parser.add_argument('-install', action='store_true', default=False, help="Installation de gedian.desktop dans Gnome")
+parser.add_argument('-directory', help="Répertoire de GEDIAN (~/local/share/gedian par défaut)")
 args = parser.parse_args()
 if args.install:
     # Valorisation des variables dans gedian.desktop et copie dans gnome
@@ -566,8 +577,14 @@ if args.install:
         os.path.expanduser("~/.local/share/applications/gedian.desktop"),
         dico)
     print("GEDIAN installé")
+elif args.directory:
+    win = Gedian(gedian_directory=args.directory)
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    Gtk.main()
 else:
     win = Gedian()
     win.connect("destroy", Gtk.main_quit)
+    win.connect("delete-event", win.on_close)
     win.show_all()
     Gtk.main()

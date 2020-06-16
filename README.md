@@ -9,11 +9,12 @@ Editeur des fichiers d'un système DEBIAN
 - cd gedian
 - python3 gedian.py -h
 ```
-usage: gedian.py [-h] [-install]
+usage: gedian.py [-h] [-install] [-directory DIRECTORY]
 
 optional arguments:
-  -h, --help  show this help message and exit
-  -install    Installation de gedian.desktop dans Gnome
+  -h, --help            show this help message and exit
+  -install              Installation de gedian.desktop dans Gnome
+  -directory DIRECTORY  Répertoire de GEDIAN (~/local/share/gedian par défaut
 ```
 - python3 gedian.py -install
 
@@ -33,7 +34,9 @@ L'interface de GEDIAN propose 3 blocs :
 
 ## La liste des fichiers
 
-La liste des fichiers est maintenue dans le fichier ```~/.local/share/gedian/debian.list``` 
+La liste des fichiers est maintenue dans le fichier ```~/.local/share/gedian/debian.list``` par défaut.
+
+L'option [-directory DIRECTORY] permet de changer le répertoire de GEDIAN
 
 Cette liste est modifiable via le bouton [debian.list]
 
