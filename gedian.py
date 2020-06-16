@@ -2,7 +2,8 @@
 # -*- coding:Utf-8 -*-
 """
     Editeur des fichiers du système Debian
-    TODO Notebook
+    TODO actualiser la doc
+    TODO anomalie toolbar editeur sur fond blanc
 """
 import os
 import argparse
@@ -21,7 +22,10 @@ GLib.set_prgname(APPLICATION_NAME)
 class Gedian(Gtk.Window):
     """ Fenêtre Editeur """
     GEDIAN_NAME = "gedian.list"
-    is_modified = False
+    notebook_pages = {}
+    notebook_tabs = []
+    current_file = ""
+    list_files = []
 
     def __init__(self, title="GEDIAN", gedian_directory=""):
         Gtk.Window.__init__(self, title=title)
@@ -35,7 +39,6 @@ class Gedian(Gtk.Window):
             os.makedirs(self.gedian_directory)
         # os.chdir(self.gedian_directory)
         self.gedian_file = self.gedian_directory + "/" + Gedian.GEDIAN_NAME
-        self.current_file = ""
 
         # WINDOW
         self.activate_focus()
@@ -96,56 +99,44 @@ class Gedian(Gtk.Window):
         # PANE_RIGHT
         # PANE_TOP PANE_BOTTOM
         self.notebook = Gtk.Notebook()
+        self.notebook.connect("switch-page", self.on_switch_page)
         self.notebook.set_border_width(3)
+        self.notebook.set_scrollable(True)
         pane_right.add1(self.notebook)
 
-        frame_terminal = Gtk.Frame()
-        frame_terminal.set_border_width(3)
-        pane_right.add2(frame_terminal)
-        pane_right.set_position(300)
-        vbox_bottom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        frame_terminal.add(vbox_bottom)
+        vbox_bottom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        pane_right.add2(vbox_bottom)
+        pane_right.set_position(400)
 
         # PANE_TOP
         # NOTEBOOK
         
-        # PANE_BOTTOM
         # TOOLBAR_TERMINAL TERMINAL
 
         # TOOLBAR_TERMINAL_-EDITOR
-        self.toolbar_terminal_editor = Gtk.HBox()
-        vbox_bottom.pack_start(self.toolbar_terminal_editor, False, True, 3)
+        self.actionbar_terminal = Gtk.ActionBar()
+        vbox_bottom.pack_start(self.actionbar_terminal, False, True, 0)
 
         self.button_paste = Gtk.Button()
         image = Gtk.Image.new_from_icon_name("go-down-symbolic", Gtk.IconSize.BUTTON)
         self.button_paste.add(image)
         self.button_paste.set_tooltip_text("Coller la ligne de l'éditeur dans le terminal")
         self.button_paste.connect("clicked", self.on_button_paste_clicked)
-        self.toolbar_terminal_editor.pack_start(self.button_paste, False, False, 0)
+        self.actionbar_terminal.pack_start(self.button_paste)
 
         self.button_exec = Gtk.Button()
         image = Gtk.Image.new_from_icon_name("media-playback-start-symbolic", Gtk.IconSize.BUTTON)
         self.button_exec.add(image)
         self.button_exec.set_tooltip_text("Valider la ligne de commande du terminal")
         self.button_exec.connect("clicked", self.on_button_exec_clicked)
-        self.toolbar_terminal_editor.pack_start(self.button_exec, False, False, 0)
+        self.actionbar_terminal.pack_start(self.button_exec)
 
         self.button_clear = Gtk.Button()
         image = Gtk.Image.new_from_icon_name("edit-clear-all-symbolic", Gtk.IconSize.BUTTON)
         self.button_clear.add(image)
         self.button_clear.set_tooltip_text("Nettoyer la fenêtre du terminal")
         self.button_clear.connect("clicked", self.on_button_clear_clicked)
-        self.toolbar_terminal_editor.pack_start(self.button_clear, False, False, 0)
-
-        self.button_save = Gtk.Button.new_with_label("Enregistrer")
-        self.button_save.set_sensitive(False)
-        self.button_save.connect("clicked", self.on_button_save_clicked)
-        self.toolbar_terminal_editor.pack_end(self.button_save, False, False, 3)
-
-        self.check_crlf = Gtk.CheckButton.new_with_label("Retour à la ligne")
-        self.check_crlf.connect("toggled", self.on_check_crlf_toggled)
-        self.check_crlf.set_sensitive(False)
-        self.toolbar_terminal_editor.pack_end(self.check_crlf, False, True, 3)
+        self.actionbar_terminal.pack_start(self.button_clear)
 
         # TERMINAL
         # https://lazka.github.io/pgi-docs/Vte-2.91/classes/Terminal.html
@@ -163,7 +154,7 @@ class Gedian(Gtk.Window):
     def load_list(self):
         for children in self.listbox.get_children():
             Gtk.Widget.destroy(children)
-        self.list_files = []
+        self.list_files.clear()    
         if os.path.exists(self.gedian_file):
             with open(self.gedian_file) as f:
                 for line in f.readlines():
@@ -179,22 +170,16 @@ class Gedian(Gtk.Window):
 
     def on_button_list_clicked(self, widget):
         """ Chargement de l'éditeur avec gedian.list """
-        if self.confirm_if_modified() :
-            self.current_file = self.gedian_file
-            self.load_file_current()
-            self.refresh_list_selection()
+        self.select_file(self.gedian_file)
+        self.refresh_list_selection()
 
     def on_row_selected(self, listbox, row):
         """ une ligne de la liste est sélectionné """
-        if self.confirm_if_modified() :
-            path_file = self.list_files[row.get_index()]
-            if path_file.find("/") == -1:
-                path_file = self.gedian_directory + "/" + path_file
-            path_absolute = os.path.expanduser(path_file)
-            self.current_file = path_absolute 
-            self.load_file_current()
-        else:
-            self.refresh_list_selection()
+        path_file = self.list_files[row.get_index()]
+        if path_file.find("/") == -1:
+            path_file = self.gedian_directory + "/" + path_file
+        path_absolute = os.path.expanduser(path_file)
+        self.select_file(path_absolute)
 
     def refresh_list_selection(self):
         """ On remet la sélection sur la ligne du fichier ouvert """
@@ -208,9 +193,9 @@ class Gedian(Gtk.Window):
                 self.listbox.select_row(self.listbox.get_row_at_index(irow))
             irow += 1
 
-    def confirm_if_modified(self):
+    def confirm_if_modified(self, path_file):
         bret = True
-        if self.is_modified :
+        if self.notebook_pages[path_file]["is_modified"] :
             dialog = Gtk.MessageDialog(parent=self,
                 modal=True, destroy_with_parent=True,
                 message_type=Gtk.MessageType.WARNING,
@@ -231,21 +216,30 @@ class Gedian(Gtk.Window):
     # https://lazka.github.io/pgi-docs/GtkSource-3.0/classes/Buffer.html   
     # http://mcclinews.free.fr/python/pygtktutfr/sec-TextBuffers.html    
     # https://sourceforge.net/p/gtksourceview/wiki/markdown_syntax/  
-    def add_page_notebook(self, content="", title="Sans nom"):
+    def add_page_notebook(self, file_path):
+        """ Ajout d'une nouvelle page au notebook """
+        vbox_page = Gtk.VBox()
+
+        # EDITEUR dans une scrolledwindow
+        self.current_file = file_path
+        data = ""
+        if os.path.exists(file_path):
+            with open(file_path) as f:
+                data = f.read()
 
         lang_manager = GtkSource.LanguageManager()
-        language = lang_manager.guess_language(self.current_file, None)
+        language = lang_manager.guess_language(file_path, None)
         
-        self.source_buffer = GtkSource.Buffer()
-        self.source_buffer.set_language(language)
-        self.source_buffer.set_text(content)
-        self.source_buffer.set_highlight_syntax(True)
-        self.source_buffer.connect("changed", self.on_textbuffer_changed)
-        # self.source_buffer.set_highlight_matching_brackets(True
+        source_buffer = GtkSource.Buffer()
+        source_buffer.set_language(language)
+        source_buffer.set_text(data)
+        source_buffer.set_highlight_syntax(True)
+        source_buffer.connect("changed", self.on_textbuffer_changed)
+        # source_buffer.set_highlight_matching_brackets(True
 
-        self.source_editor = GtkSource.View(
+        source_editor = GtkSource.View(
             name='text_editor',
-            buffer=self.source_buffer,
+            buffer=source_buffer,
             monospace=True,
             insert_spaces_instead_of_tabs=True,
             tab_width=4,
@@ -253,37 +247,158 @@ class Gedian(Gtk.Window):
             auto_indent=True,
             wrap_mode=Gtk.WrapMode.NONE
         )
-        # self.source_editor.set_editable(False)
+        # source_editor.set_editable(False)
         scrolledwindow = Gtk.ScrolledWindow()
-        scrolledwindow.add(self.source_editor)
-        self.notebook.append_page(child=scrolledwindow, tab_label=Gtk.Label(label=title))
-        self.show_all()
+        scrolledwindow.add(source_editor)
+        vbox_page.pack_start(scrolledwindow, True, True, 0)
 
-    def get_editor_current_line(self):
-        """ Obtenir la ligne courante """
-        iter = self.source_buffer.get_iter_at_mark(self.source_buffer.get_insert())
+        # TOOLBAR
+        actionbar = Gtk.ActionBar()
+        button_save = Gtk.Button()
+        image = Gtk.Image.new_from_icon_name("document-save-symbolic", Gtk.IconSize.SMALL_TOOLBAR)
+        button_save.add(image)
+        button_save.set_tooltip_text("Enregistrer")
+        button_save.set_sensitive(False)
+        button_save.connect("clicked", self.on_button_save_clicked)
+        actionbar.pack_end(button_save)
+
+        self.check_crlf = Gtk.CheckButton.new_with_label("Retour à la ligne")
+        self.check_crlf.connect("toggled", self.on_check_crlf_toggled)
+        actionbar.pack_end(self.check_crlf)
+        
+        vbox_page.pack_end(actionbar, False, False, 0)
+
+        label_page = Gtk.Label()
+        label_page.set_tooltip_text(self.current_file)
+        label_page.show()
+
+        image = Gtk.Image.new_from_icon_name("window-close-symbolic", Gtk.IconSize.MENU)
+        image.show()
+
+        button_close = Gtk.Button()
+        button_close.add(image)
+        button_close.set_relief(Gtk.ReliefStyle.NONE)
+        button_close.set_tooltip_text("Fermer")
+        button_close.show()
+        button_close.connect("clicked", self.on_button_close_clicked, vbox_page) 
+
+        hbox_label = Gtk.HBox()
+        hbox_label.pack_start(label_page, True, True, 0)
+        hbox_label.pack_end(button_close, False, False, 0)
+        actionbar.show_all()
+
+        # ipage = self.notebook.append_page(child=vbox_page, tab_label=hbox_label)
+        ipage = self.notebook.append_page(vbox_page, hbox_label)
+        self.notebook.set_tab_reorderable(vbox_page, True)
+
+        # Save properties
+        self.notebook_pages[file_path] = {
+            "ipage": ipage,
+            "page": vbox_page,
+            "label": label_page,
+            "button_save": button_save,
+            "source_buffer": source_buffer, 
+            "source_editor": source_editor,
+            "is_modified": False
+        }
+        self.set_label_page()
+        self.show_all()
+        self.notebook.set_current_page(ipage)
+        self.set_current_page(file_path)
+
+    def on_button_save_clicked(self, widget):
+        """ Sauvegarde du fichier """
+        self.save_file(self.current_file)
+    
+    def on_button_close_clicked(self, sender, page):
+        """ Fermeture de l'onglet de la page """
+        pagenum = self.notebook.page_num(page)
+        file_path = self.current_file
+        for file in self.notebook_pages:
+            if self.notebook_pages[file]["ipage"] == pagenum:
+                file_path = file
+
+        if self.confirm_if_modified(file_path) :
+            self.notebook.remove_page(pagenum)
+            del self.notebook_pages[file_path]
+            if len(self.notebook_pages) == 0 : self.current_file = ""
+            self.refresh_list_selection()
+
+    def set_label_page(self):
+        if len(self.current_file) > 20 : 
+            label = "..." + self.current_file[-20:] 
+        else: 
+            label = self.current_file
+        if self.is_modified():
+            label = label + " *"
+        self.notebook_pages[self.current_file]["label"].set_text(label)
+
+    def on_check_crlf_toggled(self, button):
+        """ gestion retour à la ligne """
+        if button.get_active() :
+            self.get_source_editor().set_wrap_mode(Gtk.WrapMode.WORD)
+        else:
+            self.get_source_editor().set_wrap_mode(Gtk.WrapMode.NONE)
+    
+    def on_switch_page(self, notebook, page, data):
+        """ Click sur l'onglet d'une page """
+        for file in self.notebook_pages:
+            if self.notebook_pages[file]["page"] == page:
+                self.set_current_page(file)                
+
+    def set_current_page(self, file_path):
+        """ Positionnement sur la page correspondant à file_path """
+        self.current_file = file_path
+        # Mise à jour toolbar
+        self.button_exec.set_sensitive(self.is_modified())
+        # Mise à jour sélection dans la listebox
+        self.refresh_list_selection()
+
+    def get_source_editor(self):
+        return self.notebook_pages[self.current_file]["source_editor"]
+    def get_source_buffer(self):
+        return self.notebook_pages[self.current_file]["source_buffer"]
+    def get_notebook_current_page(self):
+        return self.notebook_pages[self.current_file]["page"]
+    def get_notebook_current_n_page(self):
+        return self.notebook_pages[self.current_file]["ipage"]
+    def is_modified(self):
+        return self.notebook_pages[self.current_file]["is_modified"]
+    def set_modified(self, value):
+        self.notebook_pages[self.current_file]["is_modified"] = value
+        self.set_label_page()
+        if value:
+            self.notebook_pages[self.current_file]["button_save"].set_sensitive(True)
+        else:
+            self.notebook_pages[self.current_file]["button_save"].set_sensitive(False)
+
+    def is_wrap_mode(self):
+        return self.notebook_pages[self.current_file]["is_wrap_mode"]
+
+    def get_current_line(self):
+        """ Obtenir la ligne courante de l'éditeur """
+        iter = self.get_source_buffer().get_iter_at_mark(self.get_source_buffer().get_insert())
         end = iter.copy()
         end.forward_line()
         start = end.copy()
         start.backward_line()
-        sline = self.source_buffer.get_text(start, end, False)
+        sline = self.get_source_buffer().get_text(start, end, False)
         # passage ligne suivante
         iter.forward_lines(1)
-        self.source_buffer.place_cursor(iter)
+        self.get_source_buffer().place_cursor(iter)
         return sline.replace("\n", "")
 
     def on_textbuffer_changed(self, widget):
         """ Le texte a été modifié """
-        self.is_modified = True
-        self.button_save.set_sensitive(True)
-        self.label_file.set_markup("<b>"+ self.current_file + " *" + "</b>")
+        self.set_modified(True)
 
     def paste_current_line(self):
         """ on colle la ligne courante dans le terminal """
         # Sélection de la ligne courante, copie dans le clipboard et coller dans le terminal
-        sline = self.get_editor_current_line()
-        self.clipboard.set_text(sline, -1)
-        self.terminal.paste_clipboard()
+        if self.current_file in self.notebook_pages:
+            sline = self.get_current_line()
+            self.clipboard.set_text(sline, -1)
+            self.terminal.paste_clipboard()
 
     # GESTION DU TERMINAL
     # https://lazka.github.io/pgi-docs/Vte-2.91/classes/Terminal.html
@@ -330,7 +445,7 @@ class Gedian(Gtk.Window):
         if args[2] == 101 : # ctrl+E
             self.paste_current_line
         if args[2] == 115 : # ctrl+S
-            if self.is_modified : self.button_save.clicked()
+            if self.is_modified() : self.notebook_pages[self.current_file]["button_save"].clicked()
 
     def on_button_menu_clicked(self, button):
         self.popover.set_relative_to(button)
@@ -340,10 +455,6 @@ class Gedian(Gtk.Window):
     def on_popover_menu_clicked(self, button, button_name):
         print("popover", button_name)
 
-    def on_button_save_clicked(self, widget):
-        """ Sauvegarde du fichier """
-        self.save_file_current()
-    
     def on_button_paste_clicked(self, widget):
         """ On colle la ligne courante de l'éditeur dans le terminal"""
         self.paste_current_line()
@@ -359,31 +470,18 @@ class Gedian(Gtk.Window):
         self.clipboard.set_text("clear\n", -1)
         self.terminal.paste_clipboard()
     
-    def on_check_crlf_toggled(self, button):
-        """ gestion retour à la ligne """
-        if button.get_active() :
-            self.source_editor.set_wrap_mode(Gtk.WrapMode.WORD)
-        else:
-            self.source_editor.set_wrap_mode(Gtk.WrapMode.NONE)
-    
     # GESTION DES FICHIERS
-    def load_file_current(self):
-        data = ""
-        if os.path.exists(self.current_file):
-            with open(self.current_file) as f:
-                data = f.read()
+    def select_file(self, file_path):
+        """ sélection d'un fichier dans la liste """ 
+        if file_path in self.notebook_pages:
+            # self.set_current_page(file_path)
+            self.notebook.set_current_page(self.notebook_pages[file_path]["ipage"])
+        else:
+            self.add_page_notebook(file_path)
 
-        self.add_page_notebook(content=data, title=self.current_file)
-
-        # self.label_file.set_markup("<b>"+ self.current_file + "</b>")
-        self.button_save.set_sensitive(False)
-        self.check_crlf.set_sensitive(True)
-        self.button_exec.set_sensitive(True)
-        self.is_modified = False
-
-    def save_file_current(self):
-        iStart, iEnd = self.source_buffer.get_bounds()
-        data = self.source_buffer.get_text(iStart, iEnd, True)
+    def save_file(self, path_file):
+        iStart, iEnd = self.get_source_buffer().get_bounds()
+        data = self.get_source_buffer().get_text(iStart, iEnd, True)
 
         pathfile = self.current_file
         # BACKUP du fichier.bak dans le répertoire gedian
@@ -415,9 +513,7 @@ class Gedian(Gtk.Window):
         if self.current_file == self.gedian_file:
             # chargement de la liste
             self.load_list()
-        self.button_save.set_sensitive(False)
-        self.is_modified = False
-        self.label_file.set_markup("<b>"+ self.current_file + "</b>")
+        self.set_modified(False)
 
     def on_button_about_clicked(self, widget):
         """
