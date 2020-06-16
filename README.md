@@ -28,7 +28,7 @@ optional arguments:
 L'interface de GEDIAN propose 3 blocs :
 
 - la liste des fichiers que vous voulez gérer (gedian.list)
-- l'éditeur de fichier texte
+- l'éditeur de fichier texte avec onglet
 - le terminal émulateur du shell
 
 ## La liste des fichiers

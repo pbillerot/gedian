@@ -349,8 +349,6 @@ class Gedian(Gtk.Window):
     def set_current_page(self, file_path):
         """ Positionnement sur la page correspondant à file_path """
         self.current_file = file_path
-        # Mise à jour toolbar
-        self.button_exec.set_sensitive(self.is_modified())
         # Mise à jour sélection dans la listebox
         self.refresh_list_selection()
 
