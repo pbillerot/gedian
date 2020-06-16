@@ -2,8 +2,7 @@
 # -*- coding:Utf-8 -*-
 """
     Editeur des fichiers du système Debian
-    TODO actualiser la doc
-    TODO anomalie toolbar editeur sur fond blanc
+    TODO répertoire gedian en paramètre
 """
 import os
 import argparse
