@@ -14,7 +14,7 @@ usage: gedian.py [-h] [-install] [-directory DIRECTORY]
 optional arguments:
   -h, --help            show this help message and exit
   -install              Installation de gedian.desktop dans Gnome
-  -directory DIRECTORY  Répertoire de GEDIAN (~/local/share/gedian par défaut
+  -directory DIRECTORY  Répertoire de GEDIAN (~/local/share/gedian par défaut)
 ```
 - python3 gedian.py -install
 

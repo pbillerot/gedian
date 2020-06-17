@@ -1,8 +1,0 @@
-/etc/exports
-/etc/fstab
-/etc/hosts
-/etc/network/interfaces
-/etc/samba/smb.conf
-~/.profile
-~/.bashrc
-mes_commandes.md

@@ -2,12 +2,13 @@
 # -*- coding:Utf-8 -*-
 """
     Editeur des fichiers du système Debian
-    TODO 
+    TODO bug close onglet
 """
 import os
 import argparse
 import json
 import subprocess, shlex
+from pprint import pprint
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GtkSource', '3.0')
@@ -103,7 +104,8 @@ class Gedian(Gtk.Window):
         self.notebook.set_scrollable(True)
         pane_right.add1(self.notebook)
 
-        vbox_bottom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        vbox_bottom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        vbox_bottom.set_border_width(3)
         pane_right.add2(vbox_bottom)
         pane_right.set_position(400)
 
@@ -305,6 +307,8 @@ class Gedian(Gtk.Window):
         self.notebook.set_current_page(ipage)
         self.set_current_page(file_path)
 
+        # self.dump_notebook()
+
     def on_button_save_clicked(self, widget):
         """ Sauvegarde du fichier """
         self.save_file(self.current_file)
@@ -322,6 +326,15 @@ class Gedian(Gtk.Window):
             del self.notebook_pages[file_path]
             if len(self.notebook_pages) == 0 : self.current_file = ""
             self.refresh_list_selection()
+        
+        # self.dump_notebook()        
+
+    def dump_notebook(self):
+        """ trace notebook """
+        print ("<<< NOTEBOOK [" + self.current_file + "] >>>")
+        for file in self.notebook_pages:
+            print ("[" + file + "]")
+            pprint (self.notebook_pages[file])
 
     def set_label_page(self):
         if len(self.current_file) > 20 : 
@@ -344,6 +357,8 @@ class Gedian(Gtk.Window):
         for file in self.notebook_pages:
             if self.notebook_pages[file]["page"] == page:
                 self.set_current_page(file)                
+
+        # self.dump_notebook()
 
     def set_current_page(self, file_path):
         """ Positionnement sur la page correspondant à file_path """
@@ -512,25 +527,6 @@ class Gedian(Gtk.Window):
             self.load_list()
         self.set_modified(False)
 
-    def on_button_about_clicked(self, widget):
-        """
-        La fenêtre About...
-        """
-        about = Gtk.AboutDialog()
-        about.set_transient_for(self)
-        about.set_title(APPLICATION_NAME)
-        about.set_program_name(APPLICATION_NAME)
-        about.set_version("20.6.16")
-        about.set_copyright("pbillerot@github.com")
-        about.set_comments("Editeur des fichiers d'un système DEBIAN")
-        about.set_website("https://github.com/pbillerot/gedian")
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file(get_resource_path("./gedian.svg"))
-        about.set_logo(pixbuf)
-        with open(get_resource_path("LICENSE"), 'r') as file:
-            about.set_license(file.read())
-        about.connect("response", lambda d, r: d.destroy())
-        about.show()
-
     def get_resource_path(self, rel_path):
         dir_of_py_file = os.path.dirname(__file__)
         rel_path_to_resource = os.path.join(dir_of_py_file, rel_path)
@@ -546,6 +542,25 @@ class Gedian(Gtk.Window):
                 is_ok = self.confirm_if_modified(file_path)
         
         return False if is_ok else True
+
+    def on_button_about_clicked(self, widget):
+        """
+        La fenêtre About...
+        """
+        about = Gtk.AboutDialog()
+        about.set_transient_for(self)
+        about.set_title(APPLICATION_NAME)
+        about.set_program_name(APPLICATION_NAME)
+        about.set_version("20.6.17")
+        about.set_copyright("pbillerot@github.com")
+        about.set_comments("Editeur des fichiers d'un système DEBIAN")
+        about.set_website("https://github.com/pbillerot/gedian")
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(get_resource_path("./gedian.svg"))
+        about.set_logo(pixbuf)
+        with open(get_resource_path("LICENSE"), 'r') as file:
+            about.set_license(file.read())
+        about.connect("response", lambda d, r: d.destroy())
+        about.show()
 
 def get_resource_path(rel_path):
     dir_of_py_file = os.path.dirname(__file__)
