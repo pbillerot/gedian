@@ -74,7 +74,7 @@ Le terminal est un dérivé du VTE Terminal de Gnome
 
 Fonctions des 3 boutons de la barre d'outils :
 
-[v] permet de recopier la ligne de courante de l'éditeur dans le terminal (_le curseur de l'éditeur va se déplacer sur la ligne suivante, ce qui permettra d'enchaîner les commandes dans le terminal_)
+[v] permet de recopier la ligne courante de l'éditeur dans le terminal (_le curseur de l'éditeur va se déplacer sur la ligne suivante, ce qui permettra d'enchaîner les commandes dans le terminal_)
 
 [>] va générer une validation de la commande dans le terminal
 
