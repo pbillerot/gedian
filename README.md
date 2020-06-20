@@ -65,6 +65,7 @@ Nous retrouverons sous GEDIAN l'ensemble des fichiers modifiés avec leur backup
 ├── mes_commandes.md
 └── mes_commandes.md.bak
 ```
+> À noter que le mot de passe de l'administrateur sera demandé si l'utilisateur connecté n'a pas les droits d'écriture sur le fichier ou répertoire.
 
 ## Le terminal
 
