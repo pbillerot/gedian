@@ -596,6 +596,7 @@ if args.install:
 elif args.directory:
     win = Gedian(gedian_directory=args.directory)
     win.connect("destroy", Gtk.main_quit)
+    win.connect("delete-event", win.on_close)
     win.show_all()
     Gtk.main()
 else:
