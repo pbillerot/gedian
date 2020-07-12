@@ -499,7 +499,8 @@ class Gedian(Gtk.Window):
         # BACKUP du fichier.bak dans le répertoire gedian
         if self.current_file.find(self.gedian_directory) == -1:
             # création de la même arborescence sous gedian
-            pathfile = os.path.abspath(".") + self.current_file
+            # pathfile = os.path.abspath(".") + self.current_file
+            pathfile = self.gedian_directory + self.current_file          
             directory = os.path.dirname(pathfile)
             if not os.path.exists(directory):
                 os.makedirs(directory)
