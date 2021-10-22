@@ -6,12 +6,13 @@
 """
 import os
 import argparse
-import json
+import json, shutil
 import subprocess, shlex
 from pprint import pprint
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GtkSource', '3.0')
+# gi.require_version('GtkSource', '3.0')
+gi.require_version('GtkSource', '4')
 gi.require_version('Vte', '2.91')
 from gi.repository import Gtk, Gdk, GObject, GLib, Vte, GtkSource, GdkPixbuf
 
@@ -416,19 +417,31 @@ class Gedian(Gtk.Window):
     # https://lazka.github.io/pgi-docs/Vte-2.91/classes/Terminal.html
     def create_terminal(self):
         self.terminal = Vte.Terminal()
-        pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
-        self.terminal.set_pty(pty)
-        pty.spawn_async(
-            os.environ['HOME'],
-            ["/bin/bash"],
-            None,
-            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            None,
-            None,
-            -1,
-            None,
-            self.on_vte_ready
-            )
+        # pty = Vte.Pty.new_sync(Vte.PtyFlags.DEFAULT)
+        # self.terminal.set_pty(pty)
+        # pty.spawn_async(
+        #     os.environ['HOME'],
+        #     ["/bin/bash"],
+        #     None,
+        #     GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+        #     None,
+        #     None,
+        #     -1,
+        #     None,
+        #     self.on_vte_ready
+        #     )
+        self.terminal.spawn_async(
+            Vte.PtyFlags.DEFAULT, # Pty Flags
+            os.environ['HOME'], # Working DIR
+            ["/bin/bash"], # Command/BIN (argv)
+            None, # Environmental Variables (envv)
+            GLib.SpawnFlags.DEFAULT, # Spawn Flags
+            None, None, # Child Setup
+            -1, # Timeout (-1 for indefinitely)
+            None, # Cancellable
+            None, # Callback
+            None # User Data        
+        )
         self.terminal.connect("key_press_event", self.on_terminal_copy_or_paste)
         return self.terminal
 
@@ -552,7 +565,7 @@ class Gedian(Gtk.Window):
         about.set_transient_for(self)
         about.set_title(APPLICATION_NAME)
         about.set_program_name(APPLICATION_NAME)
-        about.set_version("20.6.17")
+        about.set_version("21.10.22")
         about.set_copyright("pbillerot@github.com")
         about.set_comments("Editeur des fichiers d'un système DEBIAN")
         about.set_website("https://github.com/pbillerot/gedian")
@@ -592,6 +605,14 @@ if args.install:
         get_resource_path("gedian.desktop"),
         os.path.expanduser("~/.local/share/applications/gedian.desktop"),
         dico)
+    if args.directory:
+        src= "{}/{}".format(get_resource_path(""), Gedian.GEDIAN_NAME)
+        dst= "{}/{}".format(args.directory, Gedian.GEDIAN_NAME)
+        shutil.copy(src, dst)
+    else:
+        src= "{}/{}".format(get_resource_path(""), Gedian.GEDIAN_NAME)
+        dst= "{}/{}".format(os.path.expanduser("~/.local/share/gedian"), Gedian.GEDIAN_NAME)
+        shutil.copy(src, dst)
     print("GEDIAN installé")
 elif args.directory:
     win = Gedian(gedian_directory=args.directory)

@@ -1,0 +1,12 @@
+/etc/docker/daemon.json
+/etc/exports
+/etc/fstab
+/etc/hosts
+/etc/logrotate.conf
+/etc/network/interfaces
+~/mnt/ovh/data/demarreur/cron.crontab
+~/.profile
+~/.bashrc
+~/.gitconfig
+mes_commandes.md
+~/mnt/ovh/data/demarreur/sync-ovh.sh
